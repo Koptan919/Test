@@ -35,7 +35,7 @@ class SmallPhoneLightTest {
         rule.waitUntil(10_000) { rule.onAllNodesWithText(sc.str(R.string.home_next_prayer)).fetchSemanticsNodes().isNotEmpty() }
         rule.shot("en-light-small", "01_home")
         rule.onAllNodesWithText(sc.str(R.string.nav_settings)).onFirst().performClick()
-        rule.onNodeWithText(sc.str(R.string.settings_language)).assertIsDisplayed()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText(sc.str(R.string.settings_language)).fetchSemanticsNodes().isNotEmpty() }; rule.onAllNodesWithText(sc.str(R.string.settings_language)).onFirst().assertIsDisplayed()
         rule.shot("en-light-small", "02_settings")
         sc.close()
     }

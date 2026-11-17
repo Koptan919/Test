@@ -249,23 +249,68 @@ fun NoorApp(onLanguageChanged: () -> Unit) {
     }
 }
 
-/** Shown when a newer stable release exists. Never installs anything by itself. */
+/** Shown when a newer stable release exists, or a verified update is already downloaded. */
 @Composable
 private fun UpdatePrompt() {
     val container = appContainer()
     val release by container.updates.prompt.collectAsStateWithLifecycle()
+    val installState by container.updater.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    // A verified update downloaded in the background is offered as soon as the app opens.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val s = container.settings.current()
+        if (s.autoUpdateCheck && container.updater.pendingUpdate() != null && container.connectivity.isOnline()) {
+            val check = container.updates.check()
+            if (check is com.noor.app.data.remote.UpdateCheck.Available) container.updates.showPrompt(check.release)
+        }
+    }
     val r = release ?: return
+    val update = rememberUpdateAction()
     UpdateDialog(
         release = r,
-        onUpdate = { container.updates.closePrompt() },
+        busy = installState is com.noor.app.data.remote.InstallState.Downloading || installState is com.noor.app.data.remote.InstallState.Installing,
+        onUpdate = { update(r) },
         onLater = { scope.launch { container.updates.dismiss(r) } },
     )
 }
 
+/**
+ * Downloads, verifies and installs [ReleaseInfo] through the system installer. If Android
+ * has not yet allowed Noor to install updates, opens that one-time permission screen.
+ * Falls back to the official download page if the release cannot be verified.
+ */
 @Composable
-fun UpdateDialog(release: ReleaseInfo, onUpdate: () -> Unit, onLater: () -> Unit) {
+fun rememberUpdateAction(): (ReleaseInfo) -> Unit {
+    val container = appContainer()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    return remember(container) {
+        { release ->
+            scope.launch {
+                if (!container.updater.canInstall()) {
+                    val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + context.packageName))
+                    runCatching { context.startActivity(intent) }
+                    android.widget.Toast.makeText(context, context.getString(R.string.update_allow_install), android.widget.Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                val ready = container.updater.state.value as? com.noor.app.data.remote.InstallState.Ready
+                val file = if (ready != null && ready.release.tag == release.tag && ready.file.exists()) ready.file
+                else runCatching { container.updater.downloadAndVerify(release) }.getOrNull()
+                if (file == null) {
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.pageUrl))) }
+                    container.updates.closePrompt()
+                    return@launch
+                }
+                runCatching { container.updater.install(file) }
+                    .onSuccess { container.updates.closePrompt() }
+                    .onFailure { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.pageUrl))) } }
+            }
+        }
+    }
+}
+
+@Composable
+fun UpdateDialog(release: ReleaseInfo, onUpdate: () -> Unit, onLater: () -> Unit, busy: Boolean = false) {
     val palette = LocalNoorPalette.current
     val arabic = com.noor.app.ui.isArabic()
     AlertDialog(
@@ -295,13 +340,17 @@ fun UpdateDialog(release: ReleaseInfo, onUpdate: () -> Unit, onLater: () -> Unit
         },
         confirmButton = {
             Button(
-                onClick = {
-                    val url = release.apkAsset?.downloadUrl ?: release.pageUrl
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-                    onUpdate()
-                },
+                onClick = onUpdate,
+                enabled = !busy,
                 colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = MaterialTheme.colorScheme.background),
-            ) { Text(stringResource(R.string.update_now)) }
+            ) {
+                if (busy) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.padding(end = 8.dp).heightIn(max = 18.dp), strokeWidth = 2.dp)
+                    Text(stringResource(R.string.update_installing))
+                } else {
+                    Text(stringResource(R.string.update_now))
+                }
+            }
         },
         dismissButton = { TextButton(onClick = onLater) { Text(stringResource(R.string.update_later)) } },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,

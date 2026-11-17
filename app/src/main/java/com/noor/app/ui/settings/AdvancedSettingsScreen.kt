@@ -149,6 +149,18 @@ fun AdvancedSettingsScreen(nav: NoorNavigator) {
                 SwitchRow(stringResource(R.string.updates_auto), stringResource(R.string.updates_auto_desc), s.autoUpdateCheck, true) {
                     scope.launch { container.settings.setAutoUpdateCheck(it) }
                 }
+                SwitchRow(stringResource(R.string.updates_auto_install), stringResource(R.string.updates_auto_install_desc), s.autoInstallUpdates, s.autoUpdateCheck) {
+                    scope.launch { container.settings.setAutoInstallUpdates(it) }
+                }
+                if (s.autoInstallUpdates && !container.updater.canInstall()) {
+                    TextButton(onClick = {
+                        runCatching {
+                            context.startActivity(
+                                android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:" + context.packageName)),
+                            )
+                        }
+                    }) { Text(stringResource(R.string.updates_grant_permission)) }
+                }
                 Text(updateMessage(update), style = MaterialTheme.typography.bodySmall, color = if (update is UpdateCheck.Failed) MaterialTheme.colorScheme.error else palette.accent)
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -229,7 +241,14 @@ fun AdvancedSettingsScreen(nav: NoorNavigator) {
     }
     val available = update as? UpdateCheck.Available
     if (showUpdate && available != null) {
-        UpdateDialog(available.release, onUpdate = { showUpdate = false }, onLater = { showUpdate = false })
+        val doUpdate = com.noor.app.ui.navigation.rememberUpdateAction()
+        val installState by container.updater.state.collectAsStateWithLifecycle()
+        UpdateDialog(
+            available.release,
+            onUpdate = { doUpdate(available.release) },
+            onLater = { showUpdate = false },
+            busy = installState is com.noor.app.data.remote.InstallState.Downloading || installState is com.noor.app.data.remote.InstallState.Installing,
+        )
     }
 }
 

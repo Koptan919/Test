@@ -15,7 +15,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -36,13 +35,13 @@ class UpdateDialogTest {
             ),
         )
         var later = false
-        rule.setContent { NoorTheme(darkTheme = true, reduceMotion = true) { UpdateDialog(release, onUpdate = {}, onLater = { later = true }) } }
+        var updated = false
+        rule.setContent { NoorTheme(darkTheme = true, reduceMotion = true) { UpdateDialog(release, onUpdate = { updated = true }, onLater = { later = true }) } }
         rule.onNodeWithText("إصدار جديد من نور متاح").assertIsDisplayed()
         rule.onNodeWithText("الإصدار ٠.٣.٠").assertIsDisplayed()
         rule.shot("ar-dark-phone", "10_update_dialog")
         rule.onNodeWithText("تحديث").performClick()
-        val intent = shadowOf(rule.activity).nextStartedActivity
-        assertEquals(release.apkAsset!!.downloadUrl, intent.dataString)
+        assertEquals("Update starts the verified install flow", true, updated)
         rule.onNodeWithText("لاحقاً").performClick()
         assertEquals(true, later)
     }

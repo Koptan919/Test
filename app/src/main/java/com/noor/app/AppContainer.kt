@@ -31,6 +31,7 @@ class AppContainer(context: Context) {
     private val github: GitHubClient by lazy { GitHubClient() }
     val updates: UpdateRepository by lazy { UpdateRepository(github, settings, connectivity) }
     val contentSync: ContentSync by lazy { ContentSync(github, duas, settings, connectivity) }
+    val updater: com.noor.app.data.remote.AppUpdater by lazy { com.noor.app.data.remote.AppUpdater(appContext, github) }
     val audio: AudioLibrary by lazy { AudioLibrary(appContext, database.audioDao()) }
 
     fun hijri(adjustDays: Int): HijriConverter = AdjustedHijriConverter(UmmAlQuraConverter, adjustDays)

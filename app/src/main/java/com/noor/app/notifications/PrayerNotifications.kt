@@ -48,6 +48,33 @@ object PrayerNotifier {
         context.getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
     }
 
+    const val UPDATES_CHANNEL_ID = "app_updates"
+
+    /** Tells the user a verified update is downloaded; tapping opens Noor to install it. */
+    fun showUpdateReady(context: Context) {
+        if (!canNotify(context)) return
+        val ctx = LocaleManager.wrap(context)
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        manager.createNotificationChannel(
+            NotificationChannel(UPDATES_CHANNEL_ID, ctx.getString(R.string.updates_title), NotificationManager.IMPORTANCE_DEFAULT),
+        )
+        val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pending = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val notification = NotificationCompat.Builder(context, UPDATES_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(ctx.getString(R.string.update_title))
+            .setContentText(ctx.getString(R.string.update_ready_notification))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(UPDATE_NOTIFICATION_ID, notification)
+        } catch (_: SecurityException) {
+        }
+    }
+
+    private const val UPDATE_NOTIFICATION_ID = 900
+
     fun canNotify(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="update_ready_notification">تحديث موثّق جاهز. اضغط للتثبيت.</string>
+    <string name="update_installing">جارٍ التثبيت…</string>
+    <string name="update_allow_install">اسمح لنور بتثبيت التحديثات ثم اضغط «تحديث» مرة أخرى.</string>
+    <string name="updates_auto_install">تثبيت التحديثات تلقائياً</string>
+    <string name="updates_auto_install_desc">يُنزّل عبر الواي فاي ويتحقق من البصمة والتوقيع ثم يثبّت. يطلب أندرويد الإذن مرة واحدة.</string>
+    <string name="updates_grant_permission">السماح لنور بتثبيت التحديثات</string>
     <string name="nav_saved">المحفوظات</string>
     <string name="offline_chip">دون اتصال · كل شيء يعمل</string>
     <string name="offline_hint">أنت غير متصل. اتصل بالإنترنت لاستخدام هذه الميزة.</string>
@@ -89,7 +95,7 @@
     <string name="updates_title">تحديثات التطبيق</string>
     <string name="updates_installed">الإصدار المثبت %1$s</string>
     <string name="updates_auto">التحقق من التحديثات تلقائياً</string>
-    <string name="updates_auto_desc">مرة يومياً على الأكثر؛ لا يُثبَّت شيء دون موافقتك</string>
+    <string name="updates_auto_desc">مرة يومياً على الأكثر، من مستودع الإصدارات الرسمي</string>
     <string name="updates_check_now">تحقّق الآن</string>
     <string name="updates_checking">جارٍ التحقق…</string>
     <string name="updates_available">الإصدار %1$s متاح.</string>
@@ -99,7 +105,7 @@
     <string name="updates_source">الإصدارات الرسمية: github.com/%1$s</string>
     <string name="update_title">إصدار جديد من نور متاح</string>
     <string name="update_version">الإصدار %1$s</string>
-    <string name="update_data_safe">تبقى مفضلتك وتقدّم قراءتك وإعداداتك عند التحديث.</string>
+    <string name="update_data_safe">يُتحقق منه قبل التثبيت. تبقى مفضلتك وتقدّم قراءتك وإعداداتك.</string>
     <string name="update_changelog">ما الجديد</string>
     <string name="update_now">تحديث</string>
     <string name="update_later">لاحقاً</string>

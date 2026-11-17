@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="update_ready_notification">A verified update is ready. Tap to install.</string>
+    <string name="update_installing">Installing…</string>
+    <string name="update_allow_install">Allow Noor to install updates, then tap Update again.</string>
+    <string name="updates_auto_install">Install updates automatically</string>
+    <string name="updates_auto_install_desc">Downloads on Wi-Fi, verifies the checksum and signature, then installs. Android asks for permission once.</string>
+    <string name="updates_grant_permission">Allow Noor to install updates</string>
     <string name="nav_saved">Saved</string>
     <string name="offline_chip">Offline · everything still works</string>
     <string name="offline_hint">You are offline. Connect to the internet to use this.</string>
@@ -89,7 +95,7 @@
     <string name="updates_title">App updates</string>
     <string name="updates_installed">Installed version %1$s</string>
     <string name="updates_auto">Check for updates automatically</string>
-    <string name="updates_auto_desc">At most once a day; nothing is installed without you</string>
+    <string name="updates_auto_desc">At most once a day, from the official release repository</string>
     <string name="updates_check_now">Check now</string>
     <string name="updates_checking">Checking…</string>
     <string name="updates_available">Version %1$s is available.</string>
@@ -99,7 +105,7 @@
     <string name="updates_source">Official releases: github.com/%1$s</string>
     <string name="update_title">A new version of Noor is available</string>
     <string name="update_version">Version %1$s</string>
-    <string name="update_data_safe">Your favourites, reading progress and settings are kept when you update.</string>
+    <string name="update_data_safe">Verified before installing. Your favourites, reading progress and settings are kept.</string>
     <string name="update_changelog">What\'s new</string>
     <string name="update_now">Update</string>
     <string name="update_later">Later</string>

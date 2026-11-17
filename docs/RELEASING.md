@@ -35,9 +35,30 @@ repository variable `NOOR_RELEASES_REPO` when it is set.
    - writes release notes and a SHA-256 checksum;
    - creates a **draft** release in `noor-releases`.
 4. Review the draft on GitHub, then click **Publish**. Only published, non-prerelease
-   releases are offered to users by the in-app update checker. The app opens the
-   official download page and never installs anything silently. Because each update
-   is signed with the same key, user data is kept.
+   releases are offered to users.
+
+### How devices update
+
+Once a day on Wi-Fi, the app checks the latest stable release. If there is a newer
+version, it downloads `noor-vX.Y.Z.apk` and installs it only after **all** of these
+checks pass:
+
+- the APK's SHA-256 matches `noor-vX.Y.Z.apk.sha256`, which the release workflow
+  publishes alongside it;
+- the package name is Noor's;
+- the version code is higher than the installed one;
+- it is signed with **the same certificate** as the installed app.
+
+If any check fails, nothing is kept or installed.
+
+Installation uses Android's `PackageInstaller`. The first time, Android asks the user
+to allow Noor to install updates. On Android 12 and later, further updates install
+without a prompt (`USER_ACTION_NOT_REQUIRED`), because Noor is then the installer of
+record. On older versions, the user confirms each update with one tap. User data is
+always kept. Users can turn this off in **Settings → Advanced → App updates**.
+
+> Debug builds (`com.noor.app.debug`) and release builds (`com.noor.app`) are separate
+> apps. Automatic updates apply to release builds published in `noor-releases`.
 
 ## Publishing an approved content pack
 

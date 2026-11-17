@@ -42,6 +42,8 @@ data class AppSettings(
     val lineSpacing: Float = DEFAULT_LINE_SPACING,
     val keepScreenOn: Boolean = true,
     val autoUpdateCheck: Boolean = true,
+    /** Download verified updates on Wi-Fi and install them (Android asks once for permission). */
+    val autoInstallUpdates: Boolean = true,
     val autoContentSync: Boolean = true,
     val lastUpdateCheck: Long = 0L,
     val dismissedUpdate: String? = null,
@@ -83,6 +85,7 @@ class SettingsRepository(private val context: Context) {
         val lineSpacing = floatPreferencesKey("line_spacing")
         val keepScreenOn = booleanPreferencesKey("keep_screen_on")
         val autoUpdate = booleanPreferencesKey("auto_update_check")
+        val autoInstall = booleanPreferencesKey("auto_install_updates")
         val autoSync = booleanPreferencesKey("auto_content_sync")
         val lastUpdateCheck = longPreferencesKey("last_update_check")
         val dismissedUpdate = stringPreferencesKey("dismissed_update")
@@ -115,6 +118,7 @@ class SettingsRepository(private val context: Context) {
             lineSpacing = p[Keys.lineSpacing] ?: AppSettings.DEFAULT_LINE_SPACING,
             keepScreenOn = p[Keys.keepScreenOn] ?: true,
             autoUpdateCheck = p[Keys.autoUpdate] ?: true,
+            autoInstallUpdates = p[Keys.autoInstall] ?: true,
             autoContentSync = p[Keys.autoSync] ?: true,
             lastUpdateCheck = p[Keys.lastUpdateCheck] ?: 0L,
             dismissedUpdate = p[Keys.dismissedUpdate],
@@ -164,6 +168,7 @@ class SettingsRepository(private val context: Context) {
     }
     suspend fun setKeepScreenOn(value: Boolean) = context.dataStore.edit { it[Keys.keepScreenOn] = value }
     suspend fun setAutoUpdateCheck(value: Boolean) = context.dataStore.edit { it[Keys.autoUpdate] = value }
+    suspend fun setAutoInstallUpdates(value: Boolean) = context.dataStore.edit { it[Keys.autoInstall] = value }
     suspend fun setAutoContentSync(value: Boolean) = context.dataStore.edit { it[Keys.autoSync] = value }
     suspend fun markUpdateChecked(time: Long) = context.dataStore.edit { it[Keys.lastUpdateCheck] = time }
     suspend fun dismissUpdate(tag: String) = context.dataStore.edit { it[Keys.dismissedUpdate] = tag }

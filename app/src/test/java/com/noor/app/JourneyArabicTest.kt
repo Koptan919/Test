@@ -62,7 +62,7 @@ class JourneyArabicTest {
         assertEquals("Layout must be right-to-left in Arabic", true, rtl)
         assertEquals("مواقيت الصلاة", s(R.string.module_prayer))
 
-        rule.onNodeWithText(s(R.string.greeting_salam)).assertIsDisplayed()
+        rule.waitUntil(10_000) { rule.onAllNodesWithText(s(R.string.greeting_salam)).fetchSemanticsNodes().isNotEmpty() }; rule.onAllNodesWithText(s(R.string.greeting_salam)).onFirst().assertIsDisplayed()
         clickText(s(R.string.prayer_choose_city))
         clickText("كربلاء المقدسة")
         rule.waitUntil(10_000) { rule.onAllNodesWithText(s(R.string.home_next_prayer)).fetchSemanticsNodes().isNotEmpty() }

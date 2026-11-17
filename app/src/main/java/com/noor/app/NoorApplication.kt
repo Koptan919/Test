@@ -32,6 +32,12 @@ class NoorApplication : Application() {
         }
         appScope.launch {
             container.settings.settings
+                .map { it.autoUpdateCheck }
+                .distinctUntilChanged()
+                .collect { runCatching { com.noor.app.data.remote.AppUpdater.schedule(this@NoorApplication, it) } }
+        }
+        appScope.launch {
+            container.settings.settings
                 .map { it.autoContentSync }
                 .distinctUntilChanged()
                 .collect { runCatching { ContentSync.schedule(this@NoorApplication, it) } }
