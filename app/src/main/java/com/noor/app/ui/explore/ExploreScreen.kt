@@ -23,6 +23,11 @@ import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Headphones
+import androidx.compose.material.icons.outlined.LocalLibrary
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.outlined.NightsStay
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Search
@@ -56,7 +61,6 @@ import com.noor.app.ui.navigation.NoorNavigator
 import com.noor.app.ui.navigation.Routes
 import com.noor.app.ui.theme.LocalNoorPalette
 import com.noor.app.util.Formatters
-import com.noor.core.content.DuaCatalog
 import com.noor.core.content.DuaCategory
 import com.noor.core.quran.QuranMeta
 
@@ -68,9 +72,14 @@ private val modules = listOf(
     Module(Icons.Outlined.Place, R.string.category_ziyarat, R.string.module_ziyarat_sub, Routes.duas(DuaCategory.ZIYARAT.key)),
     Module(Icons.Outlined.NightsStay, R.string.category_munajat, R.string.module_munajat_sub, Routes.duas(DuaCategory.MUNAJAT.key)),
     Module(Icons.Outlined.Spa, R.string.category_quranic, R.string.module_quranic_sub, Routes.duas(DuaCategory.QURANIC.key)),
+    Module(Icons.AutoMirrored.Outlined.MenuBook, R.string.category_sahifa, R.string.library_sahifa_desc, Routes.duas(DuaCategory.SAHIFA.key)),
+    Module(Icons.AutoMirrored.Outlined.MenuBook, R.string.category_nahj, R.string.library_nahj_desc, Routes.duas(DuaCategory.NAHJ.key)),
+    Module(Icons.Outlined.Explore, R.string.module_qibla, R.string.module_qibla_sub, Routes.QIBLA),
     Module(Icons.Outlined.TouchApp, R.string.module_tasbih, R.string.module_tasbih_sub, Routes.TASBIH),
     Module(Icons.Outlined.AccessTime, R.string.module_prayer, R.string.module_prayer_sub, Routes.PRAYER),
     Module(Icons.Outlined.Event, R.string.module_calendar, R.string.module_calendar_sub, Routes.CALENDAR),
+    Module(Icons.Outlined.Headphones, R.string.module_audio, R.string.module_audio_sub, Routes.AUDIO),
+    Module(Icons.Outlined.AccountBalance, R.string.marja_title, R.string.marja_subtitle, Routes.MARJA),
 )
 
 private data class SearchResult(val title: String, val subtitle: String, val route: String, val icon: ImageVector)
@@ -78,6 +87,9 @@ private data class SearchResult(val title: String, val subtitle: String, val rou
 @Composable
 fun ExploreScreen(nav: NoorNavigator) {
     val arabic = isArabic()
+    val container = com.noor.app.ui.appContainer()
+    val pack by container.duas.pack.collectAsStateWithLifecycle()
+    val allEntries = container.duas.entries(pack)
     var query by rememberSaveable { mutableStateOf("") }
     val q = query.trim().lowercase()
     val results: List<SearchResult> = if (q.isEmpty()) emptyList() else buildList {
@@ -94,7 +106,7 @@ fun ExploreScreen(nav: NoorNavigator) {
                 ),
             )
         }
-        DuaCatalog.entries.filter { it.titleAr.contains(q) || it.titleEn.lowercase().contains(q) }.forEach {
+        allEntries.filter { it.titleAr.contains(q) || it.titleEn.lowercase().contains(q) }.forEach {
             add(SearchResult(it.title(arabic), it.source(arabic), Routes.dua(it.id), Icons.Outlined.Book))
         }
     }
@@ -156,9 +168,9 @@ fun ExploreScreen(nav: NoorNavigator) {
                 }
             } else {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    GlassCard(Modifier.fillMaxWidth()) {
+                    GlassCard(Modifier.fillMaxWidth(), onClick = { nav.open(Routes.LIBRARY) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconBadge(Icons.Outlined.Explore)
+                            IconBadge(Icons.Outlined.LocalLibrary)
                             Spacer(Modifier.width(14.dp))
                             Column {
                                 Text(stringResource(R.string.module_library), style = MaterialTheme.typography.titleMedium)
@@ -166,7 +178,7 @@ fun ExploreScreen(nav: NoorNavigator) {
                                     stringResource(
                                         R.string.explore_library_summary,
                                         Formatters.number(QuranMeta.SURAH_COUNT, arabic),
-                                        Formatters.number(DuaCatalog.entries.size, arabic),
+                                        Formatters.number(allEntries.size, arabic),
                                     ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,

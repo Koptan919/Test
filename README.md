@@ -15,14 +15,26 @@ DataStore and WorkManager. Works fully offline, with no account and no tracking.
 
 ## Features
 
-* **Home dashboard**: greeting, Hijri and Gregorian dates, a live next-prayer card with a per-second countdown and progress ring, shortcuts, continue reading, today's prayer strip, verse of the day, and today's and upcoming occasions.
-* **Quran**: 114 surahs and 30 juz, search, the Uthmani text in the Amiri Quran font, ayah bookmarks, surah favourites, automatic reading progress, adjustable font size, copy and share.
-* **Duas & Ziyarat**: catalogue with categories and search, bookmarks and a reader. Quranic du'as are read from the verified Quran text. Other texts show an *unavailable* state until a verified content pack is imported (see `docs/CONTENT_PACK.md`).
-* **Prayer times**: Ja'fari (Leva Institute, Qum) or Tehran method, manual city selection, optional coarse location, day navigation, and the next-prayer countdown. Prayer times are not shown until a location is set.
-* **Tasbih**: Tasbih al-Zahra mode (34/33/33) and a free dhikr mode with targets, haptics and persistent state.
-* **Calendar**: Hijri month grid with Gregorian dates, month navigation, colour-coded Shia occasions, and a ±2-day adjustment for moon sighting.
-* **Favourites**: surahs, ayahs and du'as stored in Room, with filters and remove.
-* **Settings**: Arabic, English or system language (full RTL), dark, light or system theme, interface and Quran text size, calculation method, Hijri adjustment, per-prayer notifications, and content-pack import.
+* **Home**: greeting, Hijri and Gregorian dates, and a prayer hero card with a live countdown, ambient light and today's five times. Below it: quick access tiles, the verified du'a of the day, the next occasion, continue reading, recently opened items, tools, and an offline indicator.
+* **Quran**: the verified Uthmani text (SHA-256 checked) with surah and juz navigation, search, ayah bookmarks, reading progress and resume. Reading options: font size, line spacing, focus mode (bars hidden), keep screen awake, and source details.
+* **Library**: the Quran, the *Mafatih al-Jinan* collections (supplications, ziyarat, munajat, tasbihat), al-Sahifa al-Sajjadiyya, Nahj al-Balagha, the audio library, and links to the official websites of the maraji'. Texts appear only from verified, attributed sources. Anything that isn't bundled shows a clear *unavailable* state with a way to download or import it.
+* **Prayer times**: Ja'fari or Tehran method, city list or optional location, day navigation, and per-prayer notifications.
+* **Qibla compass**: great-circle bearing, corrected for magnetic declination, using the rotation-vector sensor, with alignment haptics. Without a sensor it falls back to the bearing in degrees.
+* **Tasbih**: Tasbih al-Zahra (34/33/33) and a free dhikr mode, persisted, with haptics.
+* **Hijri calendar**: month grid, Shia occasions, and a ±2-day moon-sighting adjustment.
+* **Occasion themes**: subtle Ramadan, Muharram and Arba'een atmospheres with relevant links. They can be turned off.
+* **Audio**: plays the user's own files offline. No unlicensed recordings are bundled.
+* **Updates and content sync**: checks GitHub for new stable releases and shows an Arabic or English dialog with the changelog. Approved content packs download with a checksum check.
+* **Accessibility**: large touch targets, screen-reader headings and labels, adjustable text, reduced motion (in-app setting and system setting), and full RTL support.
+
+## Quality assurance
+
+`./gradlew :app:testDebugUnitTest` runs Robolectric journeys that launch the real
+app, click through every screen in English and Arabic, on a phone, a small phone
+and a tablet, in dark and light themes, and write screenshots to
+`app/build/outputs/screenshots/`. Data tests cover the database migration and
+content-pack validation. The `:core` tests cover the prayer engine, Hijri
+calendar, Qibla bearings, version comparison and Quran integrity.
 
 ## Building
 
@@ -32,8 +44,14 @@ Requirements: JDK 17+, the Android SDK (platform 35 and build-tools), and intern
 ```bash
 echo "sdk.dir=/path/to/Android/sdk" > local.properties   # or set ANDROID_HOME
 ./gradlew :core:test          # JVM unit tests for the domain logic
+./gradlew :app:testDebugUnitTest  # UI journeys + screenshots
 ./gradlew :app:assembleDebug  # → app/build/outputs/apk/debug/app-debug.apk
 ```
+
+## Releases
+
+See `docs/RELEASING.md`. The CI workflow builds and tests every push. The release workflow
+produces a signed, verified APK as a **draft** release, which you publish manually.
 
 ## Content sources
 

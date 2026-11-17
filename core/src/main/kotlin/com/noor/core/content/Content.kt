@@ -26,7 +26,12 @@ enum class DuaCategory(val key: String) {
     ZIYARAT("ziyarat"),
     MUNAJAT("munajat"),
     TASBIHAT("tasbihat"),
+    SAHIFA("sahifa"),
+    NAHJ("nahj"),
     ;
+
+    /** Categories a verified content pack may add new entries to (books with many chapters). */
+    val acceptsNewEntries: Boolean get() = this == SAHIFA || this == NAHJ || this == SUPPLICATIONS || this == ZIYARAT || this == MUNAJAT
 
     companion object {
         fun fromKey(key: String?): DuaCategory? = entries.firstOrNull { it.key == key }
@@ -94,7 +99,7 @@ object DuaCatalog {
         DuaEntry("arafah", DuaCategory.SUPPLICATIONS, "دعاء الإمام الحسين (ع) يوم عرفة", "Du'a of Imam al-Husayn (a) on Arafah", MAFATIH_AR, MAFATIH_EN),
         DuaEntry("mashlool", DuaCategory.SUPPLICATIONS, "دعاء المشلول", "Du'a al-Mashlul", MAFATIH_AR, MAFATIH_EN),
         DuaEntry("jawshan_kabir", DuaCategory.SUPPLICATIONS, "دعاء الجوشن الكبير", "Du'a al-Jawshan al-Kabir", MAFATIH_AR, MAFATIH_EN),
-        DuaEntry("makarim", DuaCategory.SUPPLICATIONS, "دعاء مكارم الأخلاق", "Du'a Makarim al-Akhlaq", SAHIFA_AR, SAHIFA_EN),
+        DuaEntry("makarim", DuaCategory.SAHIFA, "دعاء مكارم الأخلاق", "Du'a Makarim al-Akhlaq", SAHIFA_AR, SAHIFA_EN),
 
         // Ziyarat.
         DuaEntry("ashura", DuaCategory.ZIYARAT, "زيارة عاشوراء", "Ziyarat Ashura", MAFATIH_AR, MAFATIH_EN),
@@ -122,4 +127,15 @@ object DuaCatalog {
     )
 
     fun byId(id: String): DuaEntry? = entries.firstOrNull { it.id == id }
+
+    const val NAHJ_SOURCE_AR = "نهج البلاغة – جمع الشريف الرضي"
+    const val NAHJ_SOURCE_EN = "Nahj al-Balagha – compiled by al-Sharif al-Radi"
+    const val SAHIFA_SOURCE_AR = SAHIFA_AR
+    const val SAHIFA_SOURCE_EN = SAHIFA_EN
+
+    /** Quranic supplications rotate as the verified "dua of the day". */
+    fun duaOfTheDay(date: java.time.LocalDate): DuaEntry {
+        val quranic = entries.filter { it.category == DuaCategory.QURANIC }
+        return quranic[Math.floorMod(date.toEpochDay() * 7 + 3, quranic.size.toLong()).toInt()]
+    }
 }

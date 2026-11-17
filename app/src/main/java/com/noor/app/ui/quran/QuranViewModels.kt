@@ -63,6 +63,18 @@ class QuranReaderViewModel(private val container: AppContainer, val surah: Int) 
         viewModelScope.launch { container.settings.setQuranFontSize(size) }
     }
 
+    fun setLineSpacing(value: Float) {
+        viewModelScope.launch { container.settings.setLineSpacing(value) }
+    }
+
+    fun setKeepScreenOn(value: Boolean) {
+        viewModelScope.launch { container.settings.setKeepScreenOn(value) }
+    }
+
+    fun markOpened() {
+        viewModelScope.launch { container.settings.addRecent("surah:$surah") }
+    }
+
     fun toggleSurahFavorite() {
         val meta = QuranMeta.surah(surah)
         toggle(

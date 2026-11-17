@@ -76,7 +76,7 @@ fun FavoritesScreen(nav: NoorNavigator) {
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize()) {
-        NoorTopBar(stringResource(R.string.nav_favorites))
+        NoorTopBar(stringResource(R.string.nav_saved))
         val list = all ?: return@Column
         if (list.isEmpty()) {
             UnavailableState(

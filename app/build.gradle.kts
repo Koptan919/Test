@@ -9,6 +9,10 @@ plugins {
 val appName: String = providers.gradleProperty("noor.appName").get()
 val appNameArabic: String = providers.gradleProperty("noor.appNameArabic").get()
 val appId: String = providers.gradleProperty("noor.applicationId").get()
+val releasesRepo: String = providers.gradleProperty("noor.releasesRepo").get()
+
+// Release signing comes only from environment variables (CI secrets). Nothing is stored in the repo.
+val signingStoreFile: String? = System.getenv("NOOR_KEYSTORE_FILE")
 
 android {
     namespace = "com.noor.app"
@@ -24,11 +28,24 @@ android {
         resValue("string", "app_name", appName)
         buildConfigField("String", "APP_NAME_EN", "\"$appName\"")
         buildConfigField("String", "APP_NAME_AR", "\"$appNameArabic\"")
+        buildConfigField("String", "RELEASES_REPO", "\"$releasesRepo\"")
         vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        if (signingStoreFile != null) {
+            create("release") {
+                storeFile = file(signingStoreFile)
+                storePassword = System.getenv("NOOR_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("NOOR_KEY_ALIAS")
+                keyPassword = System.getenv("NOOR_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (signingStoreFile != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -48,6 +65,15 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.systemProperty("robolectric.graphicsMode", "NATIVE")
+            // Each journey starts from a fresh process (DataStore and WorkManager are process singletons).
+            it.forkEvery = 1
+            it.maxHeapSize = "3g"
+        }
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -108,4 +134,11 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.room.testing)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -163,8 +163,9 @@ class TasbihViewModel(container: AppContainer) : ViewModel() {
         writes.trySend(ui)
     }
 
+    /** Taps before the saved state has loaded are ignored, so a load can never overwrite them. */
     fun tap(): TapResult {
-        val s = state.value ?: TasbihUi.Default
+        val s = state.value ?: return TapResult.IGNORED
         if (s.zahraComplete) return TapResult.IGNORED
         val count = s.count + 1
         val target = s.effectiveTarget
@@ -182,22 +183,22 @@ class TasbihViewModel(container: AppContainer) : ViewModel() {
     }
 
     fun reset() {
-        val s = state.value ?: TasbihUi.Default
+        val s = state.value ?: return
         save(s.copy(count = 0, index = if (s.mode == TasbihMode.ZAHRA) 0 else s.index))
     }
 
     fun setMode(mode: TasbihMode) {
-        val s = state.value ?: TasbihUi.Default
+        val s = state.value ?: return
         if (s.mode != mode) save(s.copy(mode = mode, index = 0, count = 0))
     }
 
     fun selectDhikr(index: Int) {
-        val s = state.value ?: TasbihUi.Default
+        val s = state.value ?: return
         save(s.copy(index = index, count = 0))
     }
 
     fun setTarget(target: Int) {
-        val s = state.value ?: TasbihUi.Default
+        val s = state.value ?: return
         save(s.copy(target = target, count = 0))
     }
 }
@@ -297,9 +298,14 @@ fun TasbihScreen(nav: NoorNavigator) {
             }
             Spacer(Modifier.height(18.dp))
 
-            // The counter: tap anywhere on the circle.
+            // The counter: tap anywhere on the circle. Shown once the saved count has loaded.
             val interaction = remember { MutableInteractionSource() }
-            Box(
+            if (st == null) {
+                com.noor.app.ui.components.ShimmerBlock(
+                    Modifier.widthIn(max = 320.dp).fillMaxWidth(0.82f).aspectRatio(1f),
+                    shape = CircleShape,
+                )
+            } else Box(
                 Modifier
                     .widthIn(max = 320.dp)
                     .fillMaxWidth(0.82f)
@@ -308,7 +314,7 @@ fun TasbihScreen(nav: NoorNavigator) {
                     .clip(CircleShape)
                     .background(Brush.radialGradient(listOf(palette.heroStart, palette.heroEnd)))
                     .border(1.dp, palette.heroAccent.copy(alpha = 0.5f), CircleShape)
-                    .clickable(interactionSource = interaction, indication = androidx.compose.foundation.LocalIndication.current) {
+                    .clickable(interactionSource = interaction, indication = androidx.compose.foundation.LocalIndication.current, onClickLabel = stringResource(R.string.tasbih_tap_hint)) {
                         when (vm.tap()) {
                             TapResult.TARGET_REACHED -> haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             TapResult.COUNTED -> haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -21,9 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.FileUpload
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
@@ -35,7 +33,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -52,16 +49,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.noor.app.AppContainer
-import com.noor.app.BuildConfig
 import com.noor.app.R
-import com.noor.app.data.duas.ContentPack
 import com.noor.app.data.prefs.AppSettings
 import com.noor.app.data.prefs.ThemeMode
 import com.noor.app.notifications.PrayerNotifier
@@ -87,13 +85,12 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     val settings: StateFlow<AppSettings?> = container.settings.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-    val pack: StateFlow<ContentPack?> = container.duas.pack
-
-    init {
-        viewModelScope.launch { container.duas.ensurePackLoaded() }
-    }
 
     fun locationName(s: AppSettings, arabic: Boolean): String? = container.prayer.location(s)?.name(arabic)
+
+    private fun launch(block: suspend () -> Unit) {
+        viewModelScope.launch { block() }
+    }
 
     fun setTheme(mode: ThemeMode) = launch { container.settings.setThemeMode(mode) }
     fun setTextScale(scale: Float) = launch { container.settings.setTextScale(scale) }
@@ -102,15 +99,8 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun setHijriAdjust(days: Int) = launch { container.settings.setHijriAdjust(days) }
     fun setNotifications(enabled: Boolean) = launch { container.settings.setNotificationsEnabled(enabled) }
     fun setPrayerNotification(prayer: Prayer, enabled: Boolean) = launch { container.settings.setPrayerNotification(prayer, enabled) }
-    fun removePack() = launch { container.duas.removePack() }
-
-    fun importPack(uri: android.net.Uri, onResult: (Result<Int>) -> Unit) = launch {
-        onResult(runCatching { container.duas.importPack(uri) })
-    }
-
-    private fun launch(block: suspend () -> Unit) {
-        viewModelScope.launch { block() }
-    }
+    fun setOccasionThemes(v: Boolean) = launch { container.settings.setOccasionThemes(v) }
+    fun setReduceMotion(v: Boolean) = launch { container.settings.setReduceMotion(v) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,7 +108,6 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
     val vm = noorViewModel { SettingsViewModel(it) }
     val settingsState by vm.settings.collectAsStateWithLifecycle()
-    val pack by vm.pack.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val arabic = isArabic()
     val palette = LocalNoorPalette.current
@@ -126,14 +115,6 @@ fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         vm.setNotifications(granted)
         if (!granted) toast(context, context.getString(R.string.settings_notifications_denied))
-    }
-    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            vm.importPack(uri) { result ->
-                result.onSuccess { toast(context, context.getString(R.string.settings_pack_imported, Formatters.number(it, LocaleManager.isArabic(context)))) }
-                    .onFailure { toast(context, context.getString(R.string.settings_pack_failed, it.message ?: "")) }
-            }
-        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -146,7 +127,6 @@ fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
                 .padding(horizontal = 18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Language
             SettingsCard(Icons.Outlined.Language, stringResource(R.string.settings_language)) {
                 val current = LocaleManager.get(context)
                 val options = listOf(
@@ -154,77 +134,34 @@ fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
                     AppLanguage.ARABIC to R.string.settings_language_arabic,
                     AppLanguage.ENGLISH to R.string.settings_language_english,
                 )
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    options.forEachIndexed { i, (lang, label) ->
-                        SegmentedButton(
-                            selected = current == lang,
-                            onClick = {
-                                if (current != lang) {
-                                    LocaleManager.set(context, lang)
-                                    onLanguageChanged()
-                                }
-                            },
-                            shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                            colors = SegmentedButtonDefaults.colors(activeContainerColor = palette.accent.copy(alpha = 0.2f), activeContentColor = palette.accent),
-                        ) { Text(stringResource(label), maxLines = 1) }
+                Segmented(options.map { it.second }, options.indexOfFirst { it.first == current }) { i ->
+                    val lang = options[i].first
+                    if (current != lang) {
+                        LocaleManager.set(context, lang)
+                        onLanguageChanged()
                     }
                 }
             }
 
-            // Appearance
             SettingsCard(Icons.Outlined.Palette, stringResource(R.string.settings_appearance)) {
                 Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
                 val themes = listOf(ThemeMode.SYSTEM to R.string.settings_theme_system, ThemeMode.DARK to R.string.settings_theme_dark, ThemeMode.LIGHT to R.string.settings_theme_light)
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    themes.forEachIndexed { i, (mode, label) ->
-                        SegmentedButton(
-                            selected = s.themeMode == mode,
-                            onClick = { vm.setTheme(mode) },
-                            shape = SegmentedButtonDefaults.itemShape(i, themes.size),
-                            colors = SegmentedButtonDefaults.colors(activeContainerColor = palette.accent.copy(alpha = 0.2f), activeContentColor = palette.accent),
-                        ) { Text(stringResource(label), maxLines = 1) }
-                    }
-                }
+                Segmented(themes.map { it.second }, themes.indexOfFirst { it.first == s.themeMode }) { vm.setTheme(themes[it].first) }
                 Spacer(Modifier.height(14.dp))
-                LabeledSlider(
-                    label = stringResource(R.string.settings_text_size),
-                    value = s.textScale,
-                    range = 0.85f..1.3f,
-                    display = { Formatters.digits("${(it * 100).toInt()}%", arabic) },
-                    onChange = vm::setTextScale,
-                )
-                LabeledSlider(
-                    label = stringResource(R.string.settings_quran_font),
-                    value = s.quranFontSize,
-                    range = AppSettings.MIN_QURAN_FONT..AppSettings.MAX_QURAN_FONT,
-                    display = { Formatters.number(it.toInt(), arabic) },
-                    onChange = vm::setQuranFont,
-                )
+                LabeledSlider(stringResource(R.string.settings_text_size), s.textScale, 0.85f..1.4f, { Formatters.digits("${(it * 100).toInt()}%", arabic) }, vm::setTextScale)
+                LabeledSlider(stringResource(R.string.settings_quran_font), s.quranFontSize, AppSettings.MIN_QURAN_FONT..AppSettings.MAX_QURAN_FONT, { Formatters.number(it.toInt(), arabic) }, vm::setQuranFont)
+                SwitchRow(stringResource(R.string.settings_occasion_themes), stringResource(R.string.settings_occasion_themes_desc), s.occasionThemes, true, vm::setOccasionThemes)
+                SwitchRow(stringResource(R.string.settings_reduce_motion), stringResource(R.string.settings_reduce_motion_desc), s.reduceMotion, true, vm::setReduceMotion)
             }
 
-            // Prayer times
             SettingsCard(Icons.Outlined.Tune, stringResource(R.string.settings_prayer)) {
-                SettingsLink(
-                    icon = Icons.Outlined.LocationOn,
-                    title = stringResource(R.string.settings_location),
-                    value = vm.locationName(s, arabic) ?: stringResource(R.string.settings_location_none),
-                    onClick = { nav.open(Routes.CITY) },
-                )
+                SettingsLink(Icons.Outlined.LocationOn, stringResource(R.string.settings_location), vm.locationName(s, arabic) ?: stringResource(R.string.settings_location_none)) { nav.open(Routes.CITY) }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(stringResource(R.string.settings_method), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(6.dp))
                 val methods = listOf(CalculationMethod.JAFARI to R.string.method_jafari, CalculationMethod.TEHRAN to R.string.method_tehran)
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    methods.forEachIndexed { i, (m, label) ->
-                        SegmentedButton(
-                            selected = s.calculationMethod == m,
-                            onClick = { vm.setMethod(m) },
-                            shape = SegmentedButtonDefaults.itemShape(i, methods.size),
-                            colors = SegmentedButtonDefaults.colors(activeContainerColor = palette.accent.copy(alpha = 0.2f), activeContentColor = palette.accent),
-                        ) { Text(stringResource(label), maxLines = 1) }
-                    }
-                }
+                Segmented(methods.map { it.second }, methods.indexOfFirst { it.first == s.calculationMethod }) { vm.setMethod(methods[it].first) }
                 Text(
                     stringResource(if (s.calculationMethod == CalculationMethod.JAFARI) R.string.method_jafari_desc else R.string.method_tehran_desc),
                     style = MaterialTheme.typography.bodySmall,
@@ -251,72 +188,35 @@ fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
                 }
             }
 
-            // Notifications
             SettingsCard(Icons.Outlined.Notifications, stringResource(R.string.settings_notifications)) {
                 SwitchRow(
                     title = stringResource(R.string.settings_notifications_enable),
                     subtitle = stringResource(if (s.hasLocation) R.string.settings_notifications_desc else R.string.settings_notifications_need_location),
                     checked = s.notificationsEnabled,
                     enabled = s.hasLocation,
-                    onChange = { enable ->
-                        if (enable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !PrayerNotifier.canNotify(context)) {
-                            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else {
-                            vm.setNotifications(enable)
-                        }
-                    },
-                )
+                ) { enable ->
+                    if (enable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !PrayerNotifier.canNotify(context)) {
+                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        vm.setNotifications(enable)
+                    }
+                }
                 if (s.notificationsEnabled) {
                     Prayer.prayers.forEach { p ->
-                        SwitchRow(
-                            title = stringResource(prayerNameRes(p)),
-                            subtitle = null,
-                            checked = p in s.notifyPrayers,
-                            enabled = true,
-                            onChange = { vm.setPrayerNotification(p, it) },
-                        )
+                        SwitchRow(stringResource(prayerNameRes(p)), null, p in s.notifyPrayers, true) { vm.setPrayerNotification(p, it) }
                     }
                 }
             }
 
-            // Content
-            SettingsCard(Icons.Outlined.FileUpload, stringResource(R.string.settings_content)) {
-                val p = pack
-                Text(
-                    if (p == null) stringResource(R.string.settings_pack_none)
-                    else stringResource(R.string.settings_pack_active, p.name, Formatters.number(p.items.size, arabic), p.source),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(stringResource(R.string.settings_pack_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }) {
-                        Icon(Icons.Outlined.FileUpload, null)
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.duas_import_pack))
+            GlassCard(Modifier.fillMaxWidth(), onClick = { nav.open(Routes.SETTINGS_ADVANCED) }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconBadge(Icons.Outlined.Tune, size = 36.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_advanced), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.settings_advanced_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (p != null) {
-                        TextButton(onClick = vm::removePack) {
-                            Icon(Icons.Outlined.Delete, null)
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.action_remove))
-                        }
-                    }
-                }
-            }
-
-            // About
-            SettingsCard(Icons.Outlined.Info, stringResource(R.string.settings_about)) {
-                Text(
-                    "${if (arabic) BuildConfig.APP_NAME_AR else BuildConfig.APP_NAME_EN} · ${Formatters.digits(BuildConfig.VERSION_NAME, arabic)}",
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(stringResource(R.string.about_privacy), style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.about_sources_title), style = MaterialTheme.typography.labelLarge, color = palette.accent)
-                listOf(R.string.about_source_quran, R.string.about_source_prayer, R.string.about_source_calendar, R.string.about_source_fonts).forEach {
-                    Text("• " + stringResource(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(20.dp))
@@ -324,13 +224,29 @@ fun SettingsScreen(nav: NoorNavigator, onLanguageChanged: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SettingsCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun Segmented(labels: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+    val palette = LocalNoorPalette.current
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        labels.forEachIndexed { i, label ->
+            SegmentedButton(
+                selected = selected == i,
+                onClick = { onSelect(i) },
+                shape = SegmentedButtonDefaults.itemShape(i, labels.size),
+                colors = SegmentedButtonDefaults.colors(activeContainerColor = palette.accent.copy(alpha = 0.2f), activeContentColor = palette.accent),
+            ) { Text(stringResource(label), maxLines = 1) }
+        }
+    }
+}
+
+@Composable
+internal fun SettingsCard(icon: ImageVector, title: String, content: @Composable ColumnScope.() -> Unit) {
     GlassCard(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconBadge(icon, size = 36.dp)
             Spacer(Modifier.width(12.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         }
         Spacer(Modifier.height(12.dp))
         content()
@@ -338,8 +254,8 @@ private fun SettingsCard(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 }
 
 @Composable
-private fun SettingsLink(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+internal fun SettingsLink(icon: ImageVector, title: String, value: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
         Icon(icon, null, tint = LocalNoorPalette.current.accent)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -351,9 +267,9 @@ private fun SettingsLink(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 }
 
 @Composable
-private fun SwitchRow(title: String, subtitle: String?, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchRow(title: String, subtitle: String?, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
     val palette = LocalNoorPalette.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -368,7 +284,7 @@ private fun SwitchRow(title: String, subtitle: String?, checked: Boolean, enable
 }
 
 @Composable
-private fun LabeledSlider(
+internal fun LabeledSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
@@ -390,4 +306,4 @@ private fun LabeledSlider(
     )
 }
 
-private fun toast(context: Context, text: String) = Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+internal fun toast(context: Context, text: String) = Toast.makeText(context, text, Toast.LENGTH_LONG).show()

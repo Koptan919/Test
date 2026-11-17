@@ -7,7 +7,7 @@ bundled. Each catalogue entry shows an "unavailable" state until you import a
 content pack prepared from a source you trust, such as a published edition of
 *Mafatih al-Jinan*.
 
-Import a pack in **Settings → Content → Import content pack**. It is stored
+Import a pack in **Settings → Advanced settings → Content synchronisation → Import content pack**. It is stored
 privately in the app's files directory and can be removed at any time.
 
 ## Format
@@ -43,6 +43,21 @@ Rules enforced by the importer:
   as its own paragraph, in order.
 * Quranic supplications and the Tasbih al-Zahra cannot be overridden: they
   always come from the verified Quran text or the bundled formula.
+* **New entries** (chapters of books) may be added in the categories `sahifa`,
+  `nahj`, `supplications`, `ziyarat` and `munajat`. Each one needs a new `id`,
+  a `category`, a `titleAr` (and optionally `titleEn`), and its `text`:
+
+  ```json
+  {"id": "nahj_sermon_1", "category": "nahj", "titleAr": "الخطبة ١", "titleEn": "Sermon 1",
+   "source": "Nahj al-Balagha, <edition>, p. …", "text": ["…"]}
+  ```
+
+## Distribution
+
+Approved packs are published as `content-*` releases in the public release
+repository, together with a `.sha256` file. See `RELEASING.md`. The app verifies
+the checksum and structure before installing a pack, and it never replaces a pack
+the user imported themselves.
 
 The catalogue itself lives in
 `core/src/main/kotlin/com/noor/core/content/Content.kt`.

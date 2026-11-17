@@ -190,7 +190,7 @@ fun PrayerTimesScreen(nav: NoorNavigator) {
                     )
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = { nav.open(Routes.CITY) }) { Text(stringResource(R.string.prayer_change_city)) }
+                        com.noor.app.ui.components.AccentButton(stringResource(R.string.prayer_change_city), { nav.open(Routes.CITY) })
                         LocateButton(locate, requestLocation, compact = true)
                     }
                 }

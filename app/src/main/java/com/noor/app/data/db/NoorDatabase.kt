@@ -10,6 +10,8 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 enum class FavoriteType { SURAH, AYAH, DUA }
@@ -54,6 +56,27 @@ data class TasbihEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
+/** An audio file the user added from their device (recitations, lectures, latmiyyat). */
+@Entity(tableName = "audio_tracks")
+data class AudioTrackEntity(
+    @PrimaryKey val uri: String,
+    val title: String,
+    val durationMs: Long,
+    val addedAt: Long = System.currentTimeMillis(),
+)
+
+@Dao
+interface AudioDao {
+    @Query("SELECT * FROM audio_tracks ORDER BY addedAt DESC")
+    fun observeAll(): Flow<List<AudioTrackEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(track: AudioTrackEntity)
+
+    @Query("DELETE FROM audio_tracks WHERE uri = :uri")
+    suspend fun delete(uri: String)
+}
+
 @Dao
 interface FavoriteDao {
     @Query("SELECT * FROM favorites ORDER BY createdAt DESC")
@@ -94,17 +117,30 @@ interface TasbihDao {
 }
 
 @Database(
-    entities = [FavoriteEntity::class, ReadingProgressEntity::class, TasbihEntity::class],
-    version = 1,
+    entities = [FavoriteEntity::class, ReadingProgressEntity::class, TasbihEntity::class, AudioTrackEntity::class],
+    version = 2,
     exportSchema = true,
 )
 abstract class NoorDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
     abstract fun readingDao(): ReadingDao
     abstract fun tasbihDao(): TasbihDao
+    abstract fun audioDao(): AudioDao
 
     companion object {
+        /** v2 adds the audio library; existing favourites, progress and tasbih state are kept. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `audio_tracks` (`uri` TEXT NOT NULL, `title` TEXT NOT NULL, " +
+                        "`durationMs` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`uri`))",
+                )
+            }
+        }
+
         fun create(context: Context): NoorDatabase =
-            Room.databaseBuilder(context, NoorDatabase::class.java, "noor.db").build()
+            Room.databaseBuilder(context, NoorDatabase::class.java, "noor.db")
+                .addMigrations(MIGRATION_1_2)
+                .build()
     }
 }
