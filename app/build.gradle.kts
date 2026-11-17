@@ -54,6 +54,31 @@ android {
     }
 }
 
+// Localized launcher label generated from gradle.properties (values-ar/app_name).
+abstract class GenerateLocalizedAppName : DefaultTask() {
+    @get:Input abstract val arabicName: Property<String>
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val escaped = arabicName.get().replace("&", "&amp;").replace("<", "&lt;").replace("'", "\\'")
+        val file = outputDir.get().dir("values-ar").file("app_name.xml").asFile
+        file.parentFile.mkdirs()
+        file.writeText("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string name=\"app_name\">$escaped</string>\n</resources>\n")
+    }
+}
+
+val generateLocalizedAppName = tasks.register<GenerateLocalizedAppName>("generateLocalizedAppName") {
+    arabicName.set(appNameArabic)
+    outputDir.set(layout.buildDirectory.dir("generated/res/appName"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(generateLocalizedAppName, GenerateLocalizedAppName::outputDir)
+    }
+}
+
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
