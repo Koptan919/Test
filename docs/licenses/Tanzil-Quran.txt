@@ -1,0 +1,28 @@
+Quran text: app/src/main/assets/quran/quran-uthmani.txt
+
+Tanzil Quran Text (Uthmani)
+Copyright (C) 2007-2021 Tanzil Project
+License: Creative Commons Attribution 3.0
+
+This copy of the Quran text is carefully produced, highly verified and
+continuously monitored by a group of specialists in Tanzil Project.
+
+Terms of use:
+- Permission is granted to copy and distribute verbatim copies of this text,
+  but CHANGING IT IS NOT ALLOWED.
+- This Quran text can be used in any website or application, provided that
+  its source (Tanzil Project) is clearly indicated, and a link is made to
+  tanzil.net to enable users to keep track of changes.
+
+Please check updates at: http://tanzil.net/updates/
+
+Notes on this copy:
+- Obtained through the npm package "quran" (qzaidi), which bundles the Tanzil
+  Uthmani text. That package prepended the Basmala to verse 1 of each surah
+  (except 1 and 9); Noor removes that prefix, restoring Tanzil's original
+  verse text. The Basmala is shown as a separate header in the app.
+- Integrity: SHA-256 0edb6b0f46f7b4216a8f332cd141bed075879df723a2b1f6dcc5e6a34df071a5
+  (checked at runtime; the reader shows an unavailable state on mismatch).
+- Cross-checked against the King Fahd Complex Uthmani text (via QuranEnc /
+  npm "quran-json"): the consonantal skeleton is identical for 6234 of 6236
+  verses; 12:39 and 12:41 differ only in a known orthographic variant (يصاحبي).

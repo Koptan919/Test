@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="noor_background">#FF0E0F11</color>
+    <color name="noor_burgundy">#FF6B1E2E</color>
+    <color name="noor_burgundy_deep">#FF3E0D1A</color>
+    <color name="noor_gold">#FFD4AF6A</color>
+    <color name="ic_launcher_background">#FF4A1020</color>
+</resources>
