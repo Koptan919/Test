@@ -6,6 +6,11 @@ DataStore and WorkManager. Works fully offline, with no account and no tracking.
 > **Renaming the app:** edit `noor.appName`, `noor.appNameArabic` (as `\uXXXX` escapes) and
 > `noor.applicationId` in `gradle.properties`. Nothing else needs to change.
 
+## Project memory
+
+Contributors and AI sessions should start with [`CLAUDE.md`](CLAUDE.md), then read
+[`docs/PROJECT_MEMORY.md`](docs/PROJECT_MEMORY.md) and [`docs/FEATURE_STATUS.md`](docs/FEATURE_STATUS.md).
+
 ## Modules
 
 | Module | Contents |
