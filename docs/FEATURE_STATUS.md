@@ -1,6 +1,6 @@
 # Feature status — NOOR
 
-Last verified: **2026-11-18** (commit `4dc0148`).
+Last verified: **2026-11-19**.
 
 **Status values:** Not started · In progress · Implemented · Tested · Blocked
 
@@ -30,7 +30,7 @@ Last verified: **2026-11-18** (commit `4dc0148`).
 | Notifications | Implemented | `PrayerScheduler` / `PrayerReminderWorker` with per-prayer toggles. No automated test | no |
 | Shia forum integration | Not started | — (must distinguish forum discussions from verified rulings; no API assumed) | no |
 | Religious source registry | In progress | Per-entry `source` fields, source sheets in readers, About sources, marja' official links. There is no central registry module yet | no |
-| GitHub update checker | Implemented | Release parsing, the Arabic dialog, and refusal of unverified APKs are tested. **Blocked in practice:** `noor-releases` doesn't exist and there's no signing key. Install flow untested on a device | no |
+| GitHub update checker | Implemented | Release parsing, the Arabic dialog, refusal of unverified APKs, and choosing the newest stable `vX.Y.Z` release over `content-*` releases (`UpdateSelectionTest`) are tested. A signing key exists (local release build verified with `apksigner`). **Waiting on:** the user adding the GitHub secrets and the first published release. Install flow untested on a device | no |
 | Content synchronization | Implemented | Pack validation is tested. **Blocked in practice:** no `content-*` release has been published | no |
 
 ## Also present

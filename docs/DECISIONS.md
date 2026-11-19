@@ -27,3 +27,7 @@ If a decision is reversed, add a new entry that references the old one.
 | D20 | 2026-11-17 | Marja' section = links to official websites only | Noor never issues or presents rulings |
 | D21 | 2026-11-17 | Debug builds use the application ID suffix `.debug` | A debug build installs next to the release build; self-update targets release builds |
 | D22 | 2026-11-18 | Persistent project memory in `CLAUDE.md` + `docs/*.md` | Future sessions recover state from the repository, not from conversation history |
+| D23 | 2026-11-19 | App and content releases are published in the development repo itself (`Koptan919/Test`), at the user's choice | Works immediately with `github.token`; can move to `noor-releases` later |
+| D24 | 2026-11-19 | The update checker uses the newest non-draft, non-prerelease release tagged `vX.Y.Z` that has an APK, not `releases/latest` | Content-pack releases (`content-*`) in the same repository must never hide app updates |
+| D25 | 2026-11-19 | The release key was generated in the sandbox, delivered only to the user, then shredded. Its certificate fingerprint is recorded in PROJECT_MEMORY | The user asked for it; keys never enter the repo or the logs |
+| D26 | 2026-11-19 | Running the Release workflow manually is the approval. `publish=false` (default) makes a draft, `publish=true` publishes | Rule: no production release without explicit approval |

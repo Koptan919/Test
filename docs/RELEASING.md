@@ -8,8 +8,10 @@
 | `noor-releases` | public | Approved APKs and approved content packs only |
 
 The app reads releases from the repository named in `gradle.properties` under
-`noor.releasesRepo` (currently `Koptan919/noor-releases`). The workflow uses the
-repository variable `NOOR_RELEASES_REPO` when it is set.
+`noor.releasesRepo`. **Currently this is `Koptan919/Test` itself**, chosen on 2026-11-19.
+The workflow publishes there with the built-in token, or to the repository variable
+`NOOR_RELEASES_REPO` when it is set (then it needs `NOOR_RELEASES_TOKEN`). App releases use tags
+`vX.Y.Z` and content packs use `content-*`. The app ignores content tags when checking for updates.
 
 ## One-time setup
 
@@ -28,7 +30,8 @@ repository variable `NOOR_RELEASES_REPO` when it is set.
 ## Releasing an app version
 
 1. Bump `noor.versionCode` and `noor.versionName` in `gradle.properties`, then merge.
-2. Go to **Actions → Release → Run workflow** and enter `v<versionName>`.
+2. Go to **Actions → Release → Run workflow**, enter `v<versionName>`, and tick **publish**
+   to release straight away. Leave it unticked to create a draft first.
 3. After you approve the `release` environment, the workflow:
    - runs the tests;
    - builds the signed APK and verifies it with `apksigner`;

@@ -89,3 +89,30 @@ class DataTest {
         assertNull(r.asset("missing"))
     }
 }
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
+class UpdateSelectionTest {
+    private fun rel(tag: String, apk: Boolean = true, draft: Boolean = false, pre: Boolean = false) =
+        com.noor.app.data.remote.ReleaseInfo(
+            tag, tag, "", "", null, pre, draft,
+            if (apk) listOf(com.noor.app.data.remote.ReleaseAsset("noor-$tag.apk", "u", 1)) else emptyList(),
+        )
+
+    /** Content-pack releases in the same repository must never hide an app update. */
+    @Test
+    fun picksNewestStableAppRelease() {
+        val pick = com.noor.app.data.remote.UpdateRepository.latestAppRelease(
+            listOf(
+                rel("content-2026.12.01", apk = false),
+                rel("v0.4.0", draft = true),
+                rel("v0.3.1", pre = true),
+                rel("v0.3.0"),
+                rel("v0.2.9"),
+                rel("v0.3.5", apk = false),
+            ),
+        )
+        assertEquals("v0.3.0", pick?.tag)
+        assertNull(com.noor.app.data.remote.UpdateRepository.latestAppRelease(listOf(rel("content-1", apk = false))))
+    }
+}

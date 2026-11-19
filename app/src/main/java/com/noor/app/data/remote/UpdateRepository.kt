@@ -44,11 +44,11 @@ class UpdateRepository(
     suspend fun check(): UpdateCheck {
         if (!connectivity.isOnline()) return UpdateCheck.Failed(offline = true).also { _state.value = it }
         _state.value = UpdateCheck.Checking
-        val result = runCatching { client.latestRelease(repo) }.fold(
+        val result = runCatching { latestAppRelease(client.releases(repo)) }.fold(
             onSuccess = { release ->
                 when {
                     release == null -> UpdateCheck.NoReleases
-                    !release.draft && !release.prerelease && Version.isNewer(release.tag, installedVersion) -> UpdateCheck.Available(release)
+                    Version.isNewer(release.tag, installedVersion) -> UpdateCheck.Available(release)
                     else -> UpdateCheck.UpToDate
                 }
             },
@@ -70,5 +70,14 @@ class UpdateRepository(
 
     companion object {
         const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L
+        private val APP_TAG = Regex("""^v\d+(\.\d+){0,2}$""")
+
+        /**
+         * The newest published, stable *app* release (tag `vX.Y.Z` with an APK). Content packs
+         * (`content-*` tags) share the repository and must never hide an app update.
+         */
+        fun latestAppRelease(releases: List<ReleaseInfo>): ReleaseInfo? =
+            releases.filter { !it.draft && !it.prerelease && APP_TAG.matches(it.tag) && it.apkAsset != null }
+                .maxWithOrNull(compareBy { Version.parse(it.tag) })
     }
 }

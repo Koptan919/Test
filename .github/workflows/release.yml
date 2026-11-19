@@ -1,26 +1,32 @@
 name: Release
 
-# Builds a signed APK and creates a DRAFT release in the public release repository.
-# Nothing is published until a maintainer reviews the draft and clicks "Publish" on GitHub.
+# Builds a signed APK, verifies it, and creates a GitHub Release that installed apps
+# update from. Running this workflow manually is the approval step. With "publish" off
+# (the default) the release is a DRAFT that nobody receives until you click Publish on GitHub.
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag to release (must match noor.versionName, e.g. v0.2.0)"
+        description: "Version tag to release (must match noor.versionName, e.g. v0.2.2)"
         required: true
+      publish:
+        description: "Publish immediately so installed apps update (otherwise a draft)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
     name: Signed release
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # Configure required reviewers for this environment in Settings → Environments.
+    # Optional: add required reviewers to this environment in Settings → Environments.
     environment: release
     env:
-      RELEASES_REPO: ${{ vars.NOOR_RELEASES_REPO || 'Koptan919/noor-releases' }}
+      # Defaults to this repository (chosen by the user); override with the NOOR_RELEASES_REPO variable.
+      RELEASES_REPO: ${{ vars.NOOR_RELEASES_REPO || github.repository }}
       VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +79,7 @@ jobs:
 
       - name: Release notes
         run: |
-          previous="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          previous="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
           {
             echo "## Noor ${VERSION}"
             echo
@@ -95,15 +101,24 @@ jobs:
           name: noor-${{ inputs.version }}
           path: dist/
 
-      - name: Create DRAFT release in the public repository
+      - name: Create the GitHub Release
         env:
-          GH_TOKEN: ${{ secrets.NOOR_RELEASES_TOKEN }}
+          # Same repository: the built-in token is enough. Another repository needs NOOR_RELEASES_TOKEN.
+          GH_TOKEN: ${{ secrets.NOOR_RELEASES_TOKEN || github.token }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then echo "::warning::NOOR_RELEASES_TOKEN not set; skipping draft release (artifacts are attached to this run)."; exit 0; fi
+          mode="--draft"
+          if [ "$PUBLISH" = "true" ]; then mode="--latest"; fi
+          target=""
+          if [ "$RELEASES_REPO" = "$GITHUB_REPOSITORY" ]; then target="--target $GITHUB_SHA"; fi
           gh release create "$VERSION" \
             --repo "$RELEASES_REPO" \
-            --draft \
+            $mode $target \
             --title "Noor ${VERSION}" \
             --notes-file dist/RELEASE_NOTES.md \
             "dist/noor-${VERSION}.apk" "dist/noor-${VERSION}.apk.sha256"
-          echo "Draft created in $RELEASES_REPO. Review it on GitHub and click Publish when approved."
+          if [ "$PUBLISH" = "true" ]; then
+            echo "Published in $RELEASES_REPO. Installed apps pick it up on their next daily check."
+          else
+            echo "Draft created in $RELEASES_REPO. Review it on GitHub and click Publish when approved."
+          fi

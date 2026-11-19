@@ -9,6 +9,18 @@ Only verified results are recorded.
 - Persistent project memory: `CLAUDE.md`, `docs/PROJECT_MEMORY.md`, `docs/ARCHITECTURE.md`,
   `docs/FEATURE_STATUS.md`, `docs/DECISIONS.md` and this changelog.
 
+## [0.2.2] — 2026-11-19 (versionCode 4, not yet published)
+
+### Changed
+- Update source: GitHub Releases of `Koptan919/Test` (user's choice).
+- The update checker picks the newest stable `vX.Y.Z` release with an APK, ignoring `content-*` releases.
+- Release workflow: publishes to the same repository with the built-in token; has a `publish` input
+  (draft by default).
+
+### Verified
+- Local: core 15/15, app 12/12, lint 0 errors.
+- A release build signed with the new key passed `apksigner verify` (package `com.noor.app`, versionCode 4).
+
 ## [0.2.1] — 2026-11-17 (versionCode 3, not published)
 
 ### Added
